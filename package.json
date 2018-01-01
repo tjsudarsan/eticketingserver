@@ -1,6 +1,7 @@
 {
   "name": "eticketingserver",
   "version": "1.0.0",
+  "author": "srivathsan ar, sudarsan tj",
   "main": "index.js",
   "repository": "https://github.com/tjsudarsan/eticketingserver.git",
   "license": "MIT",
