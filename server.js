@@ -69,12 +69,12 @@ app.post('/userregister',(request,response,error)=>{
                 fullName: request.body.fullName,
                 userName: request.body.userName,
                 password: request.body.password,
+                gender: request.body.gender,
                 dob: request.body.dob,
                 pinNumber: request.body.pinNumber,
                 phoneNumber: request.body.phoneNumber,
                 walletAmount: 0,
-                travelHistory: [],
-                
+                travelHistory: []
             }
             //inserting data if existing data is not present
             db.collection('users').insert(data, (err,result)=>{
@@ -104,7 +104,7 @@ app.post('/userlogin',(request,response,error)=>{
                 error: 'Username or Password is incorrect'
             }))
         }else{
-            response.send(JSON.stringify(result));
+            response.send(JSON.stringify(result.pop()));
         }
     })
 })
