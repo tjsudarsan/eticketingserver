@@ -172,7 +172,7 @@ app.post('/ticketing',(request,response,error)=>{
 //listing buses based on from and to "/listbuses" API
 app.post('/listbuses',(request,response,error)=>{
     db.collection('buses')
-        .find({stageNames: { $all: [request.body.from,request.body.to] }})
+        .aggregate( [ { $match : {stageNames: {$all: [request.body.from,request.body.to]}} },{$project:{busNo:1,routeNo:1}}])
         .toArray((err,result)=>{
             console.log(result)
         });
