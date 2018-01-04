@@ -3,6 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var MongoClient = require('mongodb').MongoClient;
+var nanoid = require('nanoid/generate');
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -23,14 +24,14 @@ app.post('/checkaadhaar', (request, response, err) => {
         // console.log(result, request.body.uid);
 
         if (result.length === 1) {
-            response.send(JSON.stringify({
+            response.json({
                 status: true
-            }));
+            });
         }
         else {
-            response.send(JSON.stringify({
+            response.json({
                 status: false
-            }));
+            });
         }
     });
 })
@@ -42,14 +43,14 @@ app.post('/checkusername', (request, response, err) => {
         // console.log(result,request.body.username);
 
         if (result.length === 1) {
-            response.send(JSON.stringify({
+            response.json({
                 status: true
-            }));
+            });
         }
         else {
-            response.send(JSON.stringify({
+            response.json({
                 status: false
-            }));
+            });
         }
     });
 })
@@ -60,9 +61,9 @@ app.post('/userregister',(request,response,error)=>{
     //crosschecking the database for existing data
     db.collection('users').find({$or: [{uid: request.body.uid},{userName: request.body.userName}]}).toArray((err,result)=>{
         if(result.length >= 1){
-            response.send(JSON.stringify({
+            response.json({
                 error: "User Already Exists"
-            }))
+            })
         }else{
             var data = {
                 uid: request.body.uid,
@@ -79,14 +80,14 @@ app.post('/userregister',(request,response,error)=>{
             //inserting data if existing data is not present
             db.collection('users').insert(data, (err,result)=>{
                 if (result.ops.length === 1) {
-                    response.send(JSON.stringify({
+                    response.json({
                         status: true
-                    }));
+                    });
                 }
                 else {
-                    response.send(JSON.stringify({
+                    response.json({
                         status: false
-                    }));
+                    });
                 }
             });
         }
@@ -100,13 +101,81 @@ app.post('/userregister',(request,response,error)=>{
 app.post('/userlogin',(request,response,error)=>{
     db.collection('users').find({$and: [{userName: request.body.userName},{password: request.body.password}]}).toArray((err,result)=>{
         if(result.length === 0){
-            response.send(JSON.stringify({
+            response.json({
                 error: 'Username or Password is incorrect'
-            }))
+            });
         }else{
-            response.send(JSON.stringify(result.pop()));
+            response.json(result.pop());
         }
     })
+})
+
+//checking PIN number to initiate ticket payment "/checkpin" API
+app.post('/checkpin',(request,response,error)=>{
+    db.collection('users').findOne({userName: request.body.userName}).then(({pinNumber})=>{
+        // console.log(result)
+        if(pinNumber === request.body.pinNumber){
+            response.json({
+                status: true
+            });
+        }else{
+            response.json({
+                status: false
+            });
+        }
+    })
+})
+
+//buying ticket process and ticket generation "/ticketing" API
+app.post('/ticketing',(request,response,error)=>{
+    db.collection('users').findOne({userName: request.body.userName}).then(result=>{
+        // console.log(result);
+        if(result !== null){
+            if(result.walletAmount < request.body.fare){
+                response.json({
+                    error: 'Insufficient Wallet Balance'
+                });
+            }
+            else{
+                db.collection('users')
+                    .findOneAndUpdate(
+                        {userName: request.body.userName},
+                        {$set: {walletAmount: result.walletAmount-request.body.fare}}
+                    )
+                    .then(()=>{
+                        var ticket = {
+                            ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz',10),
+                            fromLocation: request.body.fromLocation,
+                            toLocation: request.body.toLocation,
+                            fare: request.body.fare,
+                            timeStamp: new Date().getTime()
+                        }
+                        db.collection('users')
+                            .update(
+                                {userName: request.body.userName},
+                                {$push: {travelHistory: ticket}}
+                            )
+                            .then(()=>{
+                                response.json(ticket);
+                            });
+                        
+                    })
+            }
+        }else{
+            response.json({
+                error: 'Login again and Try'
+            })
+        }
+    })
+})
+
+//listing buses based on from and to "/listbuses" API
+app.post('/listbuses',(request,response,error)=>{
+    db.collection('buses')
+        .find({stageNames: { $all: [request.body.from,request.body.to] }})
+        .toArray((err,result)=>{
+            console.log(result)
+        });
 })
 
 app.listen(4000, () => {

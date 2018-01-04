@@ -10,6 +10,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.2",
     "mongodb": "^3.0.1",
+    "nanoid": "^1.0.1",
     "nodemon": "^1.14.7"
   },
   "scripts": {
