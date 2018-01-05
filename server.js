@@ -172,9 +172,15 @@ app.post('/ticketing',(request,response,error)=>{
 //listing buses based on from and to "/listbuses" API
 app.post('/listbuses',(request,response,error)=>{
     db.collection('buses')
-        .aggregate( [ { $match : {stageNames: {$all: [request.body.from,request.body.to]}} },{$project:{busNo:1,routeNo:1}}])
+        .aggregate( [ { $match : {stageNames: {$all: [request.body.from,request.body.to]}} },{$project:{busNo:1,routeNo:1,stageNames:1,stageWiseFare:1}}])
         .toArray((err,result)=>{
-            console.log(result)
+            response.json(result.map(bus=>{
+                return {
+                    busNo: bus.busNo,
+                    routeNo: bus.routeNo,
+                    fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from)-bus.stageNames.indexOf(request.body.to))-1]
+                }
+            }))
         });
 })
 
