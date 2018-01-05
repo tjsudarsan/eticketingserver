@@ -8,7 +8,7 @@ var nanoid = require('nanoid/generate');
 app.use(bodyParser.json());
 app.use(cors());
 
-//connecting database
+/* CONNECTING DATABASE */
 var url = `mongodb://root:root@mtcticketing-shard-00-00-jfxfq.mongodb.net:27017,mtcticketing-shard-00-01-jfxfq.mongodb.net:27017,mtcticketing-shard-00-02-jfxfq.mongodb.net:27017/test?ssl=true&replicaSet=mtcticketing-shard-0&authSource=admin`;
 var db = null;
 MongoClient.connect(url, function (err, client) {
@@ -16,6 +16,9 @@ MongoClient.connect(url, function (err, client) {
     db = client.db('mtcticketing')
     console.log('database connected')
 })
+
+
+/* PUBLIC SIDE APIs */
 
 //Checking aadhaar while registering "/checkaadhaar" API
 app.post('/checkaadhaar', (request, response, err) => {
@@ -184,6 +187,14 @@ app.post('/listbuses',(request,response,error)=>{
         });
 })
 
+
+
+
+/* CONDUCTOR SIDE APIs */
+
+
+
+/* SERVER LISTENING PORT */
 app.listen(4000, () => {
     console.log('server started');
 })
