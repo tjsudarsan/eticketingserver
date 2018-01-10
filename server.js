@@ -115,7 +115,7 @@ app.post('/userlogin',(request,response,error)=>{
 
 //checking PIN number to initiate ticket payment "/checkpin" API
 app.post('/checkpin',(request,response,error)=>{
-    db.collection('users').findOne({userName: request.body.userName}).then(({pinNumber})=>{
+    db.collection('users').findOne({uid: request.body.uid}).then(({pinNumber})=>{
         // console.log(result)
         if(pinNumber === request.body.pinNumber){
             response.json({
@@ -131,7 +131,7 @@ app.post('/checkpin',(request,response,error)=>{
 
 //buying ticket process and ticket generation "/ticketing" API
 app.post('/ticketing',(request,response,error)=>{
-    db.collection('users').findOne({userName: request.body.userName}).then(result=>{
+    db.collection('users').findOne({uid: request.body.uid}).then(result=>{
         // console.log(result);
         if(result !== null){
             if(result.walletAmount < request.body.fare){
@@ -142,20 +142,20 @@ app.post('/ticketing',(request,response,error)=>{
             else{
                 db.collection('users')
                     .findOneAndUpdate(
-                        {userName: request.body.userName},
-                        {$set: {walletAmount: result.walletAmount-request.body.fare}}
+                        {uid: request.body.uid},
+                        {$set: {walletAmount: result.walletAmount - request.body.fare}}
                     )
                     .then(()=>{
                         var ticket = {
                             ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz',10),
-                            fromLocation: request.body.fromLocation,
-                            toLocation: request.body.toLocation,
+                            fromLocation: request.body.from,
+                            toLocation: request.body.to,
                             fare: request.body.fare,
                             timeStamp: new Date().getTime()
                         }
                         db.collection('users')
                             .update(
-                                {userName: request.body.userName},
+                                {uid: request.body.uid},
                                 {$push: {travelHistory: ticket}}
                             )
                             .then(()=>{
@@ -192,7 +192,63 @@ app.post('/listbuses',(request,response,error)=>{
 
 /* CONDUCTOR SIDE APIs */
 
+//fare display based on from and to "/faredisplay" API
+app.post('/faredisplay',(request,response,error)=>{
+    db.collection('buses')
+        .findOne({busNo: request.body.busNo}).then((result)=>{
+            // console.log(result);
+            response.json({
+                fare: result.stageWiseFare[Math.abs(result.stageNames.indexOf(request.body.from)-result.stageNames.indexOf(request.body.to))-1] 
+            })
+        })
+})
 
+//checking e-wallet balance of a commuter "/checkewallet" API
+app.post('/checkewallet',(request,response,error)=>{
+    db.collection('users')
+        .findOne({uid: request.body.uid}).then((result)=>{
+            if(result.walletAmount>request.body.fare){
+                response.json({
+                    status : true
+                })
+            }
+            else{
+                response.json({
+                    status : false
+                })
+            }
+        })
+})
+
+//generate ticket from conductor side "/generateticket" API
+app.post('/generateticket',(request,response,error)=>{
+    db.collection('users').findOne({uid: request.body.uid}).then((result)=>{
+        db.collection('users')
+            .findOneAndUpdate(
+                {uid: request.body.uid},
+                {$set: {walletAmount: result.walletAmount - request.body.fare}}
+            ).then(()=>{
+                var ticket = {
+                    ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz',10),
+                    fromLocation: request.body.from,
+                    toLocation: request.body.to,
+                    fare: request.body.fare,
+                    timeStamp: new Date().getTime()
+                }
+                db.collection('users')
+                .update(
+                    {uid: request.body.uid},
+                    {$push: {travelHistory : ticket}}
+                ).then(()=>{
+                    response.json({
+                        status : true
+                    })
+                })
+
+            })
+    })
+      
+})
 
 /* SERVER LISTENING PORT */
 app.listen(4000, () => {
