@@ -254,3 +254,7 @@ app.post('/generateticket',(request,response,error)=>{
 app.listen(4000, () => {
     console.log('server started');
 })
+
+app.get("/",(req,res,err)=>{
+    res.send("Server Started")
+})
