@@ -41,7 +41,7 @@ app.post('/checkaadhaar', (request, response, err) => {
 
 //Checking username availability while registering "/checkusername" API
 app.post('/checkusername', (request, response, err) => {
-    db.collection('users').find({ username: request.body.username }).toArray((err, result) => {
+    db.collection('users').find({ userName: request.body.userName }).toArray((err, result) => {
         if (err) throw err
         // console.log(result,request.body.username);
 
