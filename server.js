@@ -257,5 +257,5 @@ app.listen(port, () => {
 })
 
 app.get("/",(req,res,err)=>{
-    res.send(`Server Started on port ${port}`)
+    res.send(`Server Started`)
 })
