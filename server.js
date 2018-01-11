@@ -251,10 +251,11 @@ app.post('/generateticket',(request,response,error)=>{
 })
 
 /* SERVER LISTENING PORT */
-app.listen(4000, () => {
-    console.log('server started');
+var port = process.env.PORT || 4000;
+app.listen(port, () => {
+    console.log(`Server Started on port ${port}`);
 })
 
 app.get("/",(req,res,err)=>{
-    res.send("Server Started")
+    res.send(`Server Started on port ${port}`)
 })
