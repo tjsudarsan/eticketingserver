@@ -59,15 +59,15 @@ app.post('/checkusername', (request, response, err) => {
 })
 
 //Register the user "/userregister" API insertion in cloud database
-app.post('/userregister',(request,response,error)=>{
-    
+app.post('/userregister', (request, response, error) => {
+
     //crosschecking the database for existing data
-    db.collection('users').find({$or: [{uid: request.body.uid},{userName: request.body.userName}]}).toArray((err,result)=>{
-        if(result.length >= 1){
+    db.collection('users').find({ $or: [{ uid: request.body.uid }, { userName: request.body.userName }] }).toArray((err, result) => {
+        if (result.length >= 1) {
             response.json({
                 error: "User Already Exists"
             })
-        }else{
+        } else {
             var data = {
                 uid: request.body.uid,
                 fullName: request.body.fullName,
@@ -81,7 +81,7 @@ app.post('/userregister',(request,response,error)=>{
                 travelHistory: []
             }
             //inserting data if existing data is not present
-            db.collection('users').insert(data, (err,result)=>{
+            db.collection('users').insert(data, (err, result) => {
                 if (result.ops.length === 1) {
                     response.json({
                         status: true
@@ -96,32 +96,32 @@ app.post('/userregister',(request,response,error)=>{
         }
     })
 
-    
-    
+
+
 })
 
 //login process '/userlogin' API returns all the user details
-app.post('/userlogin',(request,response,error)=>{
-    db.collection('users').find({$and: [{userName: request.body.userName},{password: request.body.password}]}).toArray((err,result)=>{
-        if(result.length === 0){
+app.post('/userlogin', (request, response, error) => {
+    db.collection('users').find({ $and: [{ userName: request.body.userName }, { password: request.body.password }] }).toArray((err, result) => {
+        if (result.length === 0) {
             response.json({
                 error: 'Username or Password is incorrect'
             });
-        }else{
+        } else {
             response.json(result.pop());
         }
     })
 })
 
 //checking PIN number to initiate ticket payment "/checkpin" API
-app.post('/checkpin',(request,response,error)=>{
-    db.collection('users').findOne({uid: request.body.uid}).then(({pinNumber})=>{
+app.post('/checkpin', (request, response, error) => {
+    db.collection('users').findOne({ uid: request.body.uid }).then(({ pinNumber }) => {
         // console.log(result)
-        if(pinNumber === request.body.pinNumber){
+        if (pinNumber === request.body.pinNumber) {
             response.json({
                 status: true
             });
-        }else{
+        } else {
             response.json({
                 status: false
             });
@@ -130,24 +130,24 @@ app.post('/checkpin',(request,response,error)=>{
 })
 
 //buying ticket process and ticket generation "/ticketing" API
-app.post('/ticketing',(request,response,error)=>{
-    db.collection('users').findOne({uid: request.body.uid}).then(result=>{
+app.post('/ticketing', (request, response, error) => {
+    db.collection('users').findOne({ uid: request.body.uid }).then(result => {
         // console.log(result);
-        if(result !== null){
-            if(result.walletAmount < request.body.fare){
+        if (result !== null) {
+            if (result.walletAmount < request.body.fare) {
                 response.json({
                     error: 'Insufficient Wallet Balance'
                 });
             }
-            else{
+            else {
                 db.collection('users')
                     .findOneAndUpdate(
-                        {uid: request.body.uid},
-                        {$set: {walletAmount: result.walletAmount - request.body.fare}}
+                    { uid: request.body.uid },
+                    { $set: { walletAmount: result.walletAmount - request.body.fare } }
                     )
-                    .then(()=>{
+                    .then(() => {
                         var ticket = {
-                            ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz',10),
+                            ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10),
                             fromLocation: request.body.from,
                             toLocation: request.body.to,
                             fare: request.body.fare,
@@ -155,16 +155,16 @@ app.post('/ticketing',(request,response,error)=>{
                         }
                         db.collection('users')
                             .update(
-                                {uid: request.body.uid},
-                                {$push: {travelHistory: ticket}}
+                            { uid: request.body.uid },
+                            { $push: { travelHistory: ticket } }
                             )
-                            .then(()=>{
+                            .then(() => {
                                 response.json(ticket);
                             });
-                        
+
                     })
             }
-        }else{
+        } else {
             response.json({
                 error: 'Login again and Try'
             })
@@ -173,15 +173,15 @@ app.post('/ticketing',(request,response,error)=>{
 })
 
 //listing buses based on from and to "/listbuses" API
-app.post('/listbuses',(request,response,error)=>{
+app.post('/listbuses', (request, response, error) => {
     db.collection('buses')
-        .aggregate( [ { $match : {stageNames: {$all: [request.body.from,request.body.to]}} },{$project:{busNo:1,routeNo:1,stageNames:1,stageWiseFare:1}}])
-        .toArray((err,result)=>{
-            response.json(result.map(bus=>{
+        .aggregate([{ $match: { stageNames: { $all: [request.body.from, request.body.to] } } }, { $project: { busNo: 1, routeNo: 1, stageNames: 1, stageWiseFare: 1 } }])
+        .toArray((err, result) => {
+            response.json(result.map(bus => {
                 return {
                     busNo: bus.busNo,
                     routeNo: bus.routeNo,
-                    fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from)-bus.stageNames.indexOf(request.body.to))-1]
+                    fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) - 1]
                 }
             }))
         });
@@ -193,61 +193,61 @@ app.post('/listbuses',(request,response,error)=>{
 /* CONDUCTOR SIDE APIs */
 
 //fare display based on from and to "/faredisplay" API
-app.post('/faredisplay',(request,response,error)=>{
+app.post('/faredisplay', (request, response, error) => {
     db.collection('buses')
-        .findOne({busNo: request.body.busNo}).then((result)=>{
+        .findOne({ busNo: request.body.busNo }).then((result) => {
             // console.log(result);
             response.json({
-                fare: result.stageWiseFare[Math.abs(result.stageNames.indexOf(request.body.from)-result.stageNames.indexOf(request.body.to))-1] 
+                fare: result.stageWiseFare[Math.abs(result.stageNames.indexOf(request.body.from) - result.stageNames.indexOf(request.body.to)) - 1]
             })
         })
 })
 
 //checking e-wallet balance of a commuter "/checkewallet" API
-app.post('/checkewallet',(request,response,error)=>{
+app.post('/checkewallet', (request, response, error) => {
     db.collection('users')
-        .findOne({uid: request.body.uid}).then((result)=>{
-            if(result.walletAmount>request.body.fare){
+        .findOne({ uid: request.body.uid }).then((result) => {
+            if (result.walletAmount > request.body.fare) {
                 response.json({
-                    status : true
+                    status: true
                 })
             }
-            else{
+            else {
                 response.json({
-                    status : false
+                    status: false
                 })
             }
         })
 })
 
 //generate ticket from conductor side "/generateticket" API
-app.post('/generateticket',(request,response,error)=>{
-    db.collection('users').findOne({uid: request.body.uid}).then((result)=>{
+app.post('/generateticket', (request, response, error) => {
+    db.collection('users').findOne({ uid: request.body.uid }).then((result) => {
         db.collection('users')
             .findOneAndUpdate(
-                {uid: request.body.uid},
-                {$set: {walletAmount: result.walletAmount - request.body.fare}}
-            ).then(()=>{
+            { uid: request.body.uid },
+            { $set: { walletAmount: result.walletAmount - request.body.fare } }
+            ).then(() => {
                 var ticket = {
-                    ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz',10),
+                    ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10),
                     fromLocation: request.body.from,
                     toLocation: request.body.to,
                     fare: request.body.fare,
                     timeStamp: new Date().getTime()
                 }
                 db.collection('users')
-                .update(
-                    {uid: request.body.uid},
-                    {$push: {travelHistory : ticket}}
-                ).then(()=>{
-                    response.json({
-                        status : true
+                    .update(
+                    { uid: request.body.uid },
+                    { $push: { travelHistory: ticket } }
+                    ).then(() => {
+                        response.json({
+                            status: true
+                        })
                     })
-                })
 
             })
     })
-      
+
 })
 
 /* SERVER LISTENING PORT */
@@ -256,6 +256,6 @@ app.listen(port, () => {
     console.log(`Server Started on port ${port}`);
 })
 
-app.get("/",(req,res,err)=>{
-    res.send(`Server Started`)
+app.get("/", (req, res, err) => {
+    res.send(`Server Started on Heroku`)
 })
