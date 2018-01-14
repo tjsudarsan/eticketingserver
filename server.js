@@ -25,7 +25,7 @@ MongoClient.connect(url, function (err, client) {
 app.post('/checkaadhaar', (request, response, err) => {
     db.collection('aadhaar').find({ uid: request.body.uid }).toArray((err, result) => {
         if (err) throw err
-        console.log(result, request.body);
+        // console.log(result, request.body);
 
         if (result.length === 1) {
             response.json({
@@ -82,7 +82,7 @@ app.post('/userregister', (request, response, error) => {
                 walletAmount: 0,
                 travelHistory: []
             }
-            console.log(data);
+            // console.log(data);
 
             //inserting data if existing data is not present
             db.collection('users').insert(data, (err, result) => {
