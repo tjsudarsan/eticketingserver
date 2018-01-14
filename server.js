@@ -4,6 +4,7 @@ var bodyParser = require('body-parser');
 var cors = require('cors');
 var MongoClient = require('mongodb').MongoClient;
 var nanoid = require('nanoid/generate');
+var http = require('http');
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -24,7 +25,7 @@ MongoClient.connect(url, function (err, client) {
 app.post('/checkaadhaar', (request, response, err) => {
     db.collection('aadhaar').find({ uid: request.body.uid }).toArray((err, result) => {
         if (err) throw err
-        // console.log(result, request.body.uid);
+        console.log(result, request.body);
 
         if (result.length === 1) {
             response.json({
@@ -65,6 +66,7 @@ app.post('/userregister', (request, response, error) => {
     db.collection('users').find({ $or: [{ uid: request.body.uid }, { userName: request.body.userName }] }).toArray((err, result) => {
         if (result.length >= 1) {
             response.json({
+                status: false,
                 error: "User Already Exists"
             })
         } else {
@@ -80,6 +82,8 @@ app.post('/userregister', (request, response, error) => {
                 walletAmount: 0,
                 travelHistory: []
             }
+            console.log(data);
+
             //inserting data if existing data is not present
             db.collection('users').insert(data, (err, result) => {
                 if (result.ops.length === 1) {
@@ -255,6 +259,11 @@ var port = process.env.PORT || 4000;
 app.listen(port, () => {
     console.log(`Server Started on port ${port}`);
 })
+
+/* Preventing app from sleeping */
+setInterval(function() {
+    http.get("http://mtcticketing.herokuapp.com");
+},900000);
 
 app.get("/", (req, res, err) => {
     res.send(`Server Started on Heroku`)
