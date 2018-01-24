@@ -5,6 +5,8 @@ var cors = require('cors');
 var MongoClient = require('mongodb').MongoClient;
 var nanoid = require('nanoid/generate');
 var http = require('http');
+var firebase = require('firebase');
+var fetch = require('node-fetch');
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -18,6 +20,21 @@ MongoClient.connect(url, function (err, client) {
     console.log('database connected')
 })
 
+/* Firebase Configs */
+
+// Initialize Firebase
+var config = {
+apiKey: "AIzaSyBT14DhUgc_4HMy6fYfuLGNiMezdZxvPJc",
+authDomain: "metro-1516248882253.firebaseapp.com",
+databaseURL: "https://metro-1516248882253.firebaseio.com",
+projectId: "metro-1516248882253",
+storageBucket: "",
+messagingSenderId: "743710400749"
+};
+firebase.initializeApp(config);
+var firebaseDB = firebase.database();
+
+/* End Firebase Configs */
 
 /* PUBLIC SIDE APIs */
 
@@ -178,16 +195,76 @@ app.post('/ticketing', (request, response, error) => {
 
 //listing buses based on from and to "/listbuses" API
 app.post('/listbuses', (request, response, error) => {
+    var busesList = [];
     db.collection('buses')
-        .aggregate([{ $match: { stageNames: { $all: [request.body.from, request.body.to] } } }, { $project: { busNo: 1, routeNo: 1, stageNames: 1, stageWiseFare: 1 } }])
-        .toArray((err, result) => {
-            response.json(result.map(bus => {
-                return {
-                    busNo: bus.busNo,
-                    routeNo: bus.routeNo,
-                    fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) - 1]
-                }
-            }))
+        .aggregate([{ $match: { stageNames: { $all: [request.body.from, request.body.to] }, status: "active" }}, { $project: { busNo: 1, routeNo: 1, stageNames: 1, stageWiseFare: 1, isReverse: 1 } }])
+        .toArray((err, busLists) => {
+                
+                //fetch operation for "from location"
+                fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${request.body.from}&key=AIzaSyBMYARYDMs6MAcZEmgrAdwIcP1LEL7mCOk`)
+                    .then(res=>res.json())
+                    .then(data=>{
+                        var temp = data.results.pop();
+                        var fromLocation = {
+                            latitude: temp.geometry.location.lat,
+                            longitude: temp.geometry.location.lng,
+                        };
+                        // console.log(request.body.from,fromLocation)
+                        // console.log(busLists)
+                        var action = busLists.map(bus => {
+
+                            if((bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) < 0 && !bus.isReverse){
+                                return new Promise(resolve=>{
+                                    firebaseDB.ref(`buses/${bus.busNo}`).once('value').then(dataSnapshot=>{
+                                        // console.log(dataSnapshot.val())
+                                        fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${dataSnapshot.val().latitude},${dataSnapshot.val().longitude}&destinations=${fromLocation.latitude},${fromLocation.longitude}&mode=driving&key=AIzaSyBYOxVnFYy4kR78WKtgI0oFL-HVZZpW1Fs`)
+                                            .then(res=>res.json()).then(data=>{
+                                                var values = (data.rows.pop()).elements.pop();
+                                                resolve({
+                                                    busNo: bus.busNo,
+                                                    distance: values.distance.value,
+                                                    time: values.duration.value * 1000,
+                                                })
+                                                
+                                            })
+                                    }).catch(err=>{resolve({busNo: null})});
+                                })
+                            }else if((bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) > 0 && bus.isReverse){
+                                return new Promise(resolve=>{
+                                    firebaseDB.ref(`buses/${bus.busNo}`).once('value').then(dataSnapshot=>{
+                                        // console.log(dataSnapshot.val())
+                                        fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${dataSnapshot.val().latitude},${dataSnapshot.val().longitude}&destinations=${fromLocation.latitude},${fromLocation.longitude}&mode=driving&key=AIzaSyBYOxVnFYy4kR78WKtgI0oFL-HVZZpW1Fs`)
+                                            .then(res=>res.json()).then(data=>{
+                                                var values = (data.rows.pop()).elements.pop();
+                                                resolve({
+                                                    busNo: bus.busNo,
+                                                    distance: values.distance.value,
+                                                    time: values.duration.value * 1000,
+                                                })
+                                                
+                                            })
+                                    }).catch(err=>{resolve({busNo: null})});
+                                })
+                            }
+                            else{
+                                return new Promise(resolve=>{resolve({busNo: null})})
+                            }  
+                        })
+                        Promise.all(action).then(data=>{
+                            response.json({
+                                status: true,
+                                data
+                            })
+                        });
+                    });
+                
+            // response.json(result.map(bus => {
+            //     return {
+            //         busNo: bus.busNo,
+            //         routeNo: bus.routeNo,
+            //         fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) - 1]
+            //     }
+            // }))
         });
 })
 
