@@ -195,7 +195,6 @@ app.post('/ticketing', (request, response, error) => {
 
 //listing buses based on from and to "/listbuses" API
 app.post('/listbuses', (request, response, error) => {
-    var busesList = [];
     db.collection('buses')
         .aggregate([{ $match: { stageNames: { $all: [request.body.from, request.body.to] }, status: "active" }}, { $project: { busNo: 1, routeNo: 1, stageNames: 1, stageWiseFare: 1, isReverse: 1 } }])
         .toArray((err, busLists) => {
@@ -257,14 +256,6 @@ app.post('/listbuses', (request, response, error) => {
                             })
                         });
                     });
-                
-            // response.json(result.map(bus => {
-            //     return {
-            //         busNo: bus.busNo,
-            //         routeNo: bus.routeNo,
-            //         fare: bus.stageWiseFare[Math.abs(bus.stageNames.indexOf(request.body.from) - bus.stageNames.indexOf(request.body.to)) - 1]
-            //     }
-            // }))
         });
 })
 
@@ -306,8 +297,8 @@ app.post('/generateticket', (request, response, error) => {
     db.collection('users').findOne({ uid: request.body.uid }).then((result) => {
         db.collection('users')
             .findOneAndUpdate(
-            { uid: request.body.uid },
-            { $set: { walletAmount: result.walletAmount - request.body.fare } }
+                { uid: request.body.uid },
+                { $set: { walletAmount: result.walletAmount - request.body.fare } }
             ).then(() => {
                 var ticket = {
                     ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10),
@@ -318,8 +309,8 @@ app.post('/generateticket', (request, response, error) => {
                 }
                 db.collection('users')
                     .update(
-                    { uid: request.body.uid },
-                    { $push: { travelHistory: ticket } }
+                        { uid: request.body.uid },
+                        { $push: { travelHistory: ticket } }
                     ).then(() => {
                         response.json({
                             status: true
@@ -335,6 +326,22 @@ app.post('/generateticket', (request, response, error) => {
 var port = process.env.PORT || 4000;
 app.listen(port, () => {
     console.log(`Server Started on port ${port}`);
+})
+
+/* Admin Panel */
+app.post('/addbus',(request,response,error)=>{
+    db.collection('buses').insert(request.body.data,(err, result) => {
+        if (result.ops.length === 1) {
+            response.json({
+                status: true
+            });
+        }
+        else {
+            response.json({
+                status: false
+            });
+        }
+    });
 })
 
 /* Preventing app from sleeping */
