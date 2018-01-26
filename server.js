@@ -221,7 +221,7 @@ app.post('/listbuses', (request, response, error) => {
                                                 var values = (data.rows.pop()).elements.pop();
                                                 resolve({
                                                     busNo: bus.busNo,
-                                                    distance: values.distance.value,
+                                                    distance: values.distance.text,
                                                     time: values.duration.value * 1000,
                                                 })
                                                 
@@ -237,7 +237,7 @@ app.post('/listbuses', (request, response, error) => {
                                                 var values = (data.rows.pop()).elements.pop();
                                                 resolve({
                                                     busNo: bus.busNo,
-                                                    distance: values.distance.value,
+                                                    distance: values.distance.text,
                                                     time: values.duration.value * 1000,
                                                 })
                                                 
