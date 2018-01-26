@@ -222,7 +222,7 @@ app.post('/listbuses', (request, response, error) => {
                                                 resolve({
                                                     busNo: bus.busNo,
                                                     distance: values.distance.text,
-                                                    time: values.duration.value * 1000,
+                                                    time: values.duration.text,
                                                 })
                                                 
                                             })
@@ -238,7 +238,7 @@ app.post('/listbuses', (request, response, error) => {
                                                 resolve({
                                                     busNo: bus.busNo,
                                                     distance: values.distance.text,
-                                                    time: values.duration.value * 1000,
+                                                    time: values.duration.text,
                                                 })
                                                 
                                             })
