@@ -332,6 +332,10 @@ app.listen(port, () => {
 app.post('/addbus',(request,response,error)=>{
     db.collection('buses').insert(request.body.data,(err, result) => {
         if (result.ops.length === 1) {
+            firebaseDB.ref(`buses/${request.body.data.busNo}`).set({
+                latitude: 0,
+                longitude: 0
+            });
             response.json({
                 status: true
             });
