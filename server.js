@@ -349,10 +349,10 @@ app.post('/addbus',(request,response,error)=>{
 })
 
 /* Preventing app from sleeping */
-setInterval(function() {
-    http.get("http://mtcticketing.herokuapp.com");
-    http.get("http://metroadminpanel.herokuapp.com/");
-},900000);
+// setInterval(function() {
+//     http.get("http://mtcticketing.herokuapp.com");
+//     http.get("http://metroadminpanel.herokuapp.com/");
+// },900000);
 
 app.get("/", (req, res, err) => {
     res.send(`Server Started on Heroku`)
