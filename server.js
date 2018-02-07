@@ -270,14 +270,14 @@ app.post('/initializebus',(request,response,error)=>{
         db.collection('buses')
         .updateOne({busNo: request.body.busNo},{$set: {status: 'active'}})
         .then(res=>{
-            if(res.modifiedCount === 1){
+            if(res.matchedCount === 1){
                 response.json({
                     status: true
                 })
             }else {
                 response.json({
                     status: false,
-                    error: 'Something went wrong'
+                    error: 'Invalid Bus No'
                 })
             }
         })
@@ -285,14 +285,14 @@ app.post('/initializebus',(request,response,error)=>{
         db.collection('buses')
         .updateOne({busNo: request.body.busNo},{$set: {status: 'inactive'}})
         .then(res=>{
-            if(res.modifiedCount === 1){
+            if(res.matchedCount === 1){
                 response.json({
                     status: true
                 })
             }else {
                 response.json({
                     status: false,
-                    error: 'Something went wrong'
+                    error: 'Invalid Bus No'
                 })
             }
         })
@@ -359,7 +359,7 @@ app.post('/generateticket', (request, response, error) => {
 
 /* SERVER LISTENING PORT */
 var port = process.env.PORT || 4000;
-app.listen(port, () => {
+app.listen(port,() => {
     console.log(`Server Started on port ${port}`);
 })
 
