@@ -264,6 +264,41 @@ app.post('/listbuses', (request, response, error) => {
 
 /* CONDUCTOR SIDE APIs */
 
+//initialize bus API
+app.post('/initializebus',(request,response,error)=>{
+    if(request.body.onDuty === true){
+        db.collection('buses')
+        .updateOne({busNo: request.body.busNo},{$set: {status: 'active'}})
+        .then(res=>{
+            if(res.modifiedCount === 1){
+                response.json({
+                    status: true
+                })
+            }else {
+                response.json({
+                    status: false,
+                    error: 'Something went wrong'
+                })
+            }
+        })
+    }else if(request.body.onDuty === false){
+        db.collection('buses')
+        .updateOne({busNo: request.body.busNo},{$set: {status: 'inactive'}})
+        .then(res=>{
+            if(res.modifiedCount === 1){
+                response.json({
+                    status: true
+                })
+            }else {
+                response.json({
+                    status: false,
+                    error: 'Something went wrong'
+                })
+            }
+        })
+    }
+})
+
 //fare display based on from and to "/faredisplay" API
 app.post('/faredisplay', (request, response, error) => {
     db.collection('buses')
