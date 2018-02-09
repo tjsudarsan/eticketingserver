@@ -88,7 +88,7 @@ app.post('/userregister', (request, response, error) => {
             })
         } else {
             var data = {
-                uid: request.body.uid,
+                uid: parseInt(request.body.uid),
                 fullName: request.body.fullName,
                 userName: request.body.userName,
                 password: request.body.password,
@@ -267,19 +267,22 @@ app.post('/listbuses', (request, response, error) => {
 //initialize bus API
 app.post('/initializebus',(request,response,error)=>{
     if(request.body.onDuty === true){
-        db.collection('buses')
-        .updateOne({busNo: request.body.busNo},{$set: {status: 'active'}})
-        .then(res=>{
-            if(res.matchedCount === 1){
-                response.json({
-                    status: true
-                })
-            }else {
-                response.json({
-                    status: false,
-                    error: 'Invalid Bus No'
-                })
-            }
+        db.collection('buses').findOne({busNo: request.body.busNo}).then(busDetails=> {
+            db.collection('buses')
+            .updateOne({busNo: request.body.busNo},{$set: {status: 'active'}})
+            .then(res=>{
+                if(res.matchedCount === 1){
+                    response.json({
+                        payload: busDetails,
+                        status: true
+                    })
+                }else {
+                    response.json({
+                        status: false,
+                        error: 'Invalid Bus No'
+                    })
+                }
+            })
         })
     }else if(request.body.onDuty === false){
         db.collection('buses')
@@ -313,26 +316,36 @@ app.post('/faredisplay', (request, response, error) => {
 //checking e-wallet balance of a commuter "/checkewallet" API
 app.post('/checkewallet', (request, response, error) => {
     db.collection('users')
-        .findOne({ uid: request.body.uid }).then((result) => {
-            if (result.walletAmount > request.body.fare) {
+        .findOne({ uid: parseInt(request.body.uid) }).then((result) => {
+            if(result){
+                if (result.walletAmount > request.body.fare) {
+                    response.json({
+                        status: true
+                    })
+                }
+                else {
+                    response.json({
+                        status: false,
+                        error: "Insufficient Balance"
+                    })
+                }
+            }else{
                 response.json({
-                    status: true
+                    status: false,
+                    error: "User not registered!"
                 })
             }
-            else {
-                response.json({
-                    status: false
-                })
-            }
+            
         })
 })
 
 //generate ticket from conductor side "/generateticket" API
 app.post('/generateticket', (request, response, error) => {
-    db.collection('users').findOne({ uid: request.body.uid }).then((result) => {
+    db.collection('users').findOne({ uid: parseInt(request.body.uid) }).then((result) => {
+        console.log(result)
         db.collection('users')
             .findOneAndUpdate(
-                { uid: request.body.uid },
+                { uid: parseInt(request.body.uid) },
                 { $set: { walletAmount: result.walletAmount - request.body.fare } }
             ).then(() => {
                 var ticket = {
@@ -344,7 +357,7 @@ app.post('/generateticket', (request, response, error) => {
                 }
                 db.collection('users')
                     .update(
-                        { uid: request.body.uid },
+                        { uid: parseInt(request.body.uid) },
                         { $push: { travelHistory: ticket } }
                     ).then(() => {
                         response.json({
