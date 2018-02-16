@@ -342,7 +342,7 @@ app.post('/checkewallet', (request, response, error) => {
 //generate ticket from conductor side "/generateticket" API
 app.post('/generateticket', (request, response, error) => {
     db.collection('users').findOne({ uid: parseInt(request.body.uid) }).then((result) => {
-        console.log(result)
+        // console.log(result)
         db.collection('users')
             .findOneAndUpdate(
                 { uid: parseInt(request.body.uid) },
