@@ -138,13 +138,14 @@ app.post('/userlogin', (request, response, error) => {
 app.post('/checkpin', (request, response, error) => {
     db.collection('users').findOne({ uid: request.body.uid }).then(({ pinNumber }) => {
         // console.log(result)
-        if (pinNumber === request.body.pinNumber) {
+        if (pinNumber === parseInt(request.body.pinNumber)) {
             response.json({
                 status: true
             });
         } else {
             response.json({
-                status: false
+                status: false,
+                error: 'Incorrect PIN Number'
             });
         }
     })
@@ -157,6 +158,7 @@ app.post('/ticketing', (request, response, error) => {
         if (result !== null) {
             if (result.walletAmount < request.body.fare) {
                 response.json({
+                    status: false,
                     error: 'Insufficient Wallet Balance'
                 });
             }
@@ -180,9 +182,12 @@ app.post('/ticketing', (request, response, error) => {
                             { $push: { travelHistory: ticket } }
                             )
                             .then(() => {
-                                response.json(ticket);
+                                response.json({
+                                    status: true,
+                                    ticket,
+                                    walletAmount: result.walletAmount - request.body.fare
+                                });
                             });
-
                     })
             }
         } else {
@@ -259,6 +264,24 @@ app.post('/listbuses', (request, response, error) => {
         });
 })
 
+//fare display based on from and to "/faredisplay" API
+app.post('/farecalculation', (request, response, error) => {
+    db.collection('buses')
+        .findOne({ stageNames: { $all: [request.body.from, request.body.to] } }).then((result) => {
+            if(result){
+                response.json({
+                    status: true,
+                    fare: result.stageWiseFare[Math.abs(result.stageNames.indexOf(request.body.from) - result.stageNames.indexOf(request.body.to)) - 1]
+                })
+            }else{
+                response.json({
+                    status: false,
+                    error: "No route on given 'From' and 'To' Locations"
+                })
+            }
+        })
+})
+
 
 
 
@@ -300,17 +323,6 @@ app.post('/initializebus',(request,response,error)=>{
             }
         })
     }
-})
-
-//fare display based on from and to "/faredisplay" API
-app.post('/faredisplay', (request, response, error) => {
-    db.collection('buses')
-        .findOne({ busNo: request.body.busNo }).then((result) => {
-            // console.log(result);
-            response.json({
-                fare: result.stageWiseFare[Math.abs(result.stageNames.indexOf(request.body.from) - result.stageNames.indexOf(request.body.to)) - 1]
-            })
-        })
 })
 
 //checking e-wallet balance of a commuter "/checkewallet" API
@@ -372,7 +384,7 @@ app.post('/generateticket', (request, response, error) => {
 
 /* SERVER LISTENING PORT */
 var port = process.env.PORT || 4000;
-app.listen(port,() => {
+app.listen(port,'192.168.43.186',() => {
     console.log(`Server Started on port ${port}`);
 })
 
