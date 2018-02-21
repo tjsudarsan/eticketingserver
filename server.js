@@ -170,7 +170,7 @@ app.post('/ticketing', (request, response, error) => {
                     )
                     .then(() => {
                         var ticket = {
-                            ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10),
+                            ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10).toUpperCase(),
                             fromLocation: request.body.from,
                             toLocation: request.body.to,
                             fare: request.body.fare,
@@ -203,9 +203,10 @@ app.post('/listbuses', (request, response, error) => {
     db.collection('buses')
         .aggregate([{ $match: { stageNames: { $all: [request.body.from, request.body.to] }, status: "active" }}, { $project: { busNo: 1, routeNo: 1, stageNames: 1, stageWiseFare: 1, isReverse: 1 } }])
         .toArray((err, busLists) => {
-                
-                //fetch operation for "from location"
-                fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${request.body.from}&key=AIzaSyBMYARYDMs6MAcZEmgrAdwIcP1LEL7mCOk`)
+                if(busLists.length !== 0){
+                    console.log('yes there are buses')
+                    //fetch operation for "from location"
+                    fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${request.body.from}&key=AIzaSyBMYARYDMs6MAcZEmgrAdwIcP1LEL7mCOk`)
                     .then(res=>res.json())
                     .then(data=>{
                         var temp = data.results.pop();
@@ -261,6 +262,14 @@ app.post('/listbuses', (request, response, error) => {
                             })
                         });
                     });
+                }else {
+                    console.log("no buses")
+                    response.json({
+                        status: false,
+                        error: 'No Direct Buses in this Route'
+                    })
+                }
+                
         });
 })
 
@@ -282,6 +291,25 @@ app.post('/farecalculation', (request, response, error) => {
         })
 })
 
+
+//provide the travelHistory of the user "/travelhistory" API
+app.post('/travelhistory', (request,response,error)=>{
+    db.collection('users')
+        .findOne({uid: parseInt(request.body.uid)})
+        .then((result)=>{
+            if(result){
+                response.json({
+                    status: true,
+                    travelHistory: result.travelHistory
+                })
+            }else{
+                response.json({
+                    status: false,
+                    error: 'Invalid User Login Again'
+                })
+            }
+        })
+})
 
 
 
