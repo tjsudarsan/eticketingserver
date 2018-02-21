@@ -412,7 +412,7 @@ app.post('/generateticket', (request, response, error) => {
 
 /* SERVER LISTENING PORT */
 var port = process.env.PORT || 4000;
-app.listen(port,'192.168.43.186',() => {
+app.listen(port,() => {
     console.log(`Server Started on port ${port}`);
 })
 
