@@ -80,7 +80,7 @@ app.post('/checkusername', (request, response, err) => {
 app.post('/userregister', (request, response, error) => {
 
     //crosschecking the database for existing data
-    db.collection('users').find({ $or: [{ uid: request.body.uid }, { userName: request.body.userName }] }).toArray((err, result) => {
+    db.collection('users').find({ $or: [{ uid: parseInt(request.body.uid) }, { userName: request.body.userName }] }).toArray((err, result) => {
         if (result.length >= 1) {
             response.json({
                 status: false,
