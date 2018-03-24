@@ -173,6 +173,7 @@ app.post('/ticketing', (request, response, error) => {
                             ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10).toUpperCase(),
                             fromLocation: request.body.from,
                             toLocation: request.body.to,
+                            noOfTickets: request.body.noOfTickets,
                             fare: request.body.fare,
                             timeStamp: new Date().getTime()
                         }
@@ -389,9 +390,10 @@ app.post('/generateticket', (request, response, error) => {
                 { $set: { walletAmount: result.walletAmount - request.body.fare } }
             ).then(() => {
                 var ticket = {
-                    ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10),
+                    ticketNo: nanoid('1234567890abcdefghijklmnopqrstuvwxyz', 10).toUpperCase(),
                     fromLocation: request.body.from,
                     toLocation: request.body.to,
+                    noOfTickets: request.body.noOfTickets,
                     fare: request.body.fare,
                     timeStamp: new Date().getTime()
                 }
@@ -408,6 +410,23 @@ app.post('/generateticket', (request, response, error) => {
             })
     })
 
+})
+
+//Checking ticket API '/checkticket'
+app.post('/checkticket',(request,response,error)=>{
+    db.collection('users').findOne({uid : parseInt(request.body.uid)}).then((result)=>{
+        if(result){
+            response.json({
+                status: true,
+                payload: result.travelHistory
+            })
+        }else{
+            response.json({
+                status: false,
+                error: "User not registered"
+            })
+        }
+    })
 })
 
 /* SERVER LISTENING PORT */
