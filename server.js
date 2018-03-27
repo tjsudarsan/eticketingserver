@@ -312,6 +312,23 @@ app.post('/travelhistory', (request,response,error)=>{
         })
 })
 
+app.post('/walletrecharge',(request,response,error)=>{
+    db.collection('users')
+        .findOne({uid: request.body.uid})
+        .then(result=>{
+            db.collection('users')
+                .update(
+                    { uid: request.body.uid },
+                    { $set: { walletAmount: result.walletAmount + request.body.loadAmount } }
+                    )
+                .then(() => {
+                    response.json({
+                        status: true,
+                        walletAmount: result.walletAmount + request.body.loadAmount
+                    });
+                });
+        })
+})
 
 
 /* CONDUCTOR SIDE APIs */
